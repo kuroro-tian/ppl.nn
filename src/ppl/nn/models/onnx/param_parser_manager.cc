@@ -27,6 +27,7 @@
 #include "ppl/nn/models/onnx/parsers/onnx/parse_constant_of_shape_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_convolution_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_convtranspose_param.h"
+#include "ppl/nn/models/onnx/parsers/onnx/parse_cumsum_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_depth_to_space_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_flatten_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_gather_param.h"
@@ -145,6 +146,8 @@ ParamParserManager::ParamParserManager() {
     PPL_REGISTER_OP_WITH_PARAM("", "Conv", 1, 16, ppl::nn::common::ConvolutionParam, ParseConvolutionParam);
     PPL_REGISTER_OP_WITH_PARAM("", "ConvTranspose", 11, 16, ppl::nn::common::ConvTransposeParam,
                                ParseConvTransposeParam);
+    PPL_REGISTER_OP_WITHOUT_PARAM("", "Cos", 1, 16);
+    PPL_REGISTER_OP_WITH_PARAM("", "CumSum", 1, 16, ppl::nn::common::CumSumParam, ParseCumSumParam);
     // D
     PPL_REGISTER_OP_WITH_PARAM("", "DepthToSpace", 11, 12, ppl::nn::common::DepthToSpaceParam, ParseDepthToSpaceParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Div", 7, 12);
@@ -207,6 +210,7 @@ ParamParserManager::ParamParserManager() {
     PPL_REGISTER_OP_WITHOUT_PARAM("", "SequenceAt", 11, 16);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Shape", 1, 12);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Sigmoid", 6, 12);
+    PPL_REGISTER_OP_WITHOUT_PARAM("", "Sin", 1, 16);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Slice", 11, 12);
     PPL_REGISTER_OP_WITH_PARAM("", "Softmax", 1, 12, ppl::nn::common::SoftmaxParam, ParseSoftmaxParam);
     PPL_REGISTER_OP_WITH_PARAM("", "Split", 2, 12, ppl::nn::common::SplitParam, ParseSplitParam);
