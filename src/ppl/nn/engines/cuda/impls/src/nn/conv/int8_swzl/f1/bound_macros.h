@@ -15,25 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "ppl/nn/engines/cuda/module/op_compile_manager.h"
+#define SET_BOUND_FLT1(_in_hw_mask, _in_n_id, _in_h_id, _in_w_id) \
+        { \
+            _in_hw_mask = _in_n_id <  in_num && \
+                        _in_h_id >= 0 && _in_h_id < in_height && \
+                        _in_w_id >= 0 && _in_w_id < in_width; \
+        }
 
-namespace ppl { namespace nn { namespace cuda {
+#define FWD_FLT1(_flt_c_v16_id, _flt_c_v16_valid) \
+        { \
+            flt_c_v16_id   += TILE_K_V16_PER_CTA; \
+            _flt_c_v16_valid = _flt_c_v16_id < flt_c_v16_end; \
+        }
 
-OpCompiler* OpCompilerManager::FindCompiler(const std::string& kernel_type) const {
-    auto res = type2compiler_.find(kernel_type);
-    if (res == type2compiler_.end()) {
-        return nullptr;
-    }
-    return res->second;
-}
-
-OpCompilerManager::OpCompilerManager() {
-    type2compiler_.emplace("Conv", &conv_);
-    type2compiler_.emplace("Gemm", &gemm_);
-    type2compiler_.emplace("MatMul", &gemm_);
-    type2compiler_.emplace("ConvTranspose", &convtranspose_);
-    type2compiler_.emplace("LSTM", &normal_);
-    type2compiler_.emplace("MMCVModulatedDeformConv2d", &normal_);
-}
-
-}}} // namespace ppl::nn::cuda
+#define FWD_FLT(_flt_c_v16_id, _flt_c_v16_valid)    FWD_FLT1(_flt_c_v16_id, _flt_c_v16_valid)
