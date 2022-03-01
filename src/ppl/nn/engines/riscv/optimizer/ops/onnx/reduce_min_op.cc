@@ -42,26 +42,22 @@ RetCode ReduceMinOp::Init(const OptKernelOptions& options) {
 
 RetCode ReduceMinOp::SelectFormat(const InputOutputInfo& info, vector<dataformat_t>* selected_input_formats,
                                   vector<dataformat_t>* selected_output_formats) {
-    if (DATAFORMAT_N8CX == selected_input_formats->at(0) && param_->keep_dims) {
+    if (DATAFORMAT_N8CX == selected_input_formats->at(0) && param_->keepdims) {
         selected_output_formats->at(0) = DATAFORMAT_N8CX;
-    } else if (DATAFORMAT_N4CX == selected_input_formats->at(0) && param_->keep_dims) {
+    } else if (DATAFORMAT_N4CX == selected_input_formats->at(0) && param_->keepdims) {
         selected_output_formats->at(0) = DATAFORMAT_N4CX;
-    } else if (DATAFORMAT_N2CX == selected_input_formats->at(0) && param_->keep_dims) {
+    } else if (DATAFORMAT_N2CX == selected_input_formats->at(0) && param_->keepdims) {
         selected_output_formats->at(0) = DATAFORMAT_N2CX;
     }
 
     return RC_SUCCESS;
 }
 
-RetCode ReduceMinOp::SelectDataType(const InputOutputInfo& info, std::vector<datatype_t>* selected_input_data_types,
+RetCode ReduceMinOp::SelectDataType(const InputOutputInfo& info, ppl::common::datatype_t forward_precision,
+                                    std::vector<datatype_t>* selected_input_data_types,
                                     std::vector<datatype_t>* selected_output_data_types) {
-    if (DATATYPE_FLOAT16 == selected_input_data_types->at(0)) {
-        selected_output_data_types->at(0) = DATATYPE_FLOAT16;
-    } else if (DATATYPE_FLOAT32 == selected_input_data_types->at(0)) {
-        selected_output_data_types->at(0) = DATATYPE_FLOAT32;
-    } else if (DATATYPE_INT64 == selected_input_data_types->at(0)) {
-        selected_output_data_types->at(0) = DATATYPE_INT64;
-    }
+    selected_input_data_types->at(0) = forward_precision;
+    selected_output_data_types->at(0) = forward_precision;
 
     return RC_SUCCESS;
 }

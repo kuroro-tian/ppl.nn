@@ -23,12 +23,25 @@ using namespace std;
 namespace ppl { namespace nn { namespace onnx {
 
 ppl::common::RetCode ParseReduceParam(const ::onnx::NodeProto& pb_node, const map<string, uint64_t>&, void* arg,
-                                      ir::Node*, ir::GraphTopo*) {
+                                      ir::Node* node, ir::GraphTopo*) {
     auto param = static_cast<ppl::nn::common::ReduceParam*>(arg);
 
+    if (node->GetType().name == "ReduceSum")  {
+        param->type = ppl::nn::common::ReduceParam::ReduceSum;
+    } else if (node->GetType().name == "ReduceMax")  {
+        param->type = ppl::nn::common::ReduceParam::ReduceMax;
+    } else if (node->GetType().name == "ReduceMin")  {
+        param->type = ppl::nn::common::ReduceParam::ReduceMin;
+    } else if (node->GetType().name == "ReduceProd")  {
+        param->type = ppl::nn::common::ReduceParam::ReduceProd;
+    } else if (node->GetType().name == "ReduceMean")  {
+        param->type = ppl::nn::common::ReduceParam::ReduceMean;
+    } else {
+        param->type = ppl::nn::common::ReduceParam::ReduceUnknown;
+    }
+
     param->axes = utils::GetNodeAttrsByKey<int32_t>(pb_node, "axes");
-    int keepdims = utils::GetNodeAttrByKey<int>(pb_node, "keepdims", 1);
-    param->keep_dims = (keepdims != 0);
+    param->keepdims = utils::GetNodeAttrByKey<int>(pb_node, "keepdims", 1);
 
     return ppl::common::RC_SUCCESS;
 }

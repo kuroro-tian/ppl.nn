@@ -20,6 +20,7 @@
 #include "ppl/nn/engines/cuda/optimizer/ops/ppl/bridge_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/ppl/channel_shuffle_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/ppl/shape_operation_op.h"
+#include "ppl/nn/engines/cuda/optimizer/ops/ppl/reduce_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/conv_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/add_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/argmax_op.h"
@@ -34,6 +35,8 @@
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/gather_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/gather_nd_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/gemm_op.h"
+#include "ppl/nn/engines/cuda/optimizer/ops/onnx/global_average_pool_op.h"
+#include "ppl/nn/engines/cuda/optimizer/ops/onnx/global_max_pool_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/greater_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/identity_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/leaky_relu_op.h"
@@ -47,10 +50,6 @@
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/non_zero_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/not_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/pad_op.h"
-#include "ppl/nn/engines/cuda/optimizer/ops/onnx/reduce_max_op.h"
-#include "ppl/nn/engines/cuda/optimizer/ops/onnx/reduce_min_op.h"
-#include "ppl/nn/engines/cuda/optimizer/ops/onnx/reduce_sum_op.h"
-#include "ppl/nn/engines/cuda/optimizer/ops/onnx/reduce_mean_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/relu_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/reshape_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/scatter_nd_op.h"
@@ -83,7 +82,6 @@
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/scatter_elements_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/ceil_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/and_op.h"
-#include "ppl/nn/engines/cuda/optimizer/ops/onnx/reduce_prod_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/if_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/loop_op.h"
 #include "ppl/nn/engines/cuda/optimizer/ops/onnx/sequence_at_op.h"
@@ -168,7 +166,8 @@ OptKernelCreatorManager::OptKernelCreatorManager() {
     REGISTER_OPT_KERNEL_CREATOR("", "Gather", 11, 12, GatherOp);
     REGISTER_OPT_KERNEL_CREATOR("", "GatherND", 11, 11, GatherNDOp);
     REGISTER_OPT_KERNEL_CREATOR("", "Gemm", 11, 12, GemmOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "GlobalAveragePool", 1, 16, AveragePoolOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "GlobalAveragePool", 1, 16, GlobalAveragePoolOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "GlobalMaxPool", 11, 13, GlobalMaxPoolOp);
     REGISTER_OPT_KERNEL_CREATOR("", "Greater", 9, 12, GreaterOp);
     // I
     REGISTER_OPT_KERNEL_CREATOR("", "Identity", 1, 12, IdentityOp);
@@ -195,11 +194,11 @@ OptKernelCreatorManager::OptKernelCreatorManager() {
     REGISTER_OPT_KERNEL_CREATOR("", "Pow", 7, 11, PowOp);
     // R
     REGISTER_OPT_KERNEL_CREATOR("", "Range", 11, 16, RangeOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMax", 11, 11, ReduceMaxOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMean", 11, 12, ReduceMeanOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMin", 11, 11, ReduceMinOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "ReduceProd", 11, 12, ReduceProdOp);
-    REGISTER_OPT_KERNEL_CREATOR("", "ReduceSum", 11, 12, ReduceSumOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMax", 11, 11, ReduceOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMean", 11, 12, ReduceOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "ReduceMin", 11, 11, ReduceOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "ReduceProd", 11, 12, ReduceOp);
+    REGISTER_OPT_KERNEL_CREATOR("", "ReduceSum", 11, 12, ReduceOp);
     REGISTER_OPT_KERNEL_CREATOR("", "Relu", 6, 12, ReluOp);
     REGISTER_OPT_KERNEL_CREATOR("", "Reshape", 5, 12, ReshapeOp);
     REGISTER_OPT_KERNEL_CREATOR("", "Resize", 11, 12, ResizeOp);

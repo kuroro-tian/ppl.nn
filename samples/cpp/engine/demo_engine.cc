@@ -55,4 +55,14 @@ RetCode DemoEngine::ProcessGraph(utils::SharedResource*, ir::Graph* graph, Runti
     return RC_SUCCESS;
 }
 
+#ifdef PPLNN_ENABLE_PMX_MODEL
+OptKernel* DemoEngine::CreateOptKernel(const ir::Node* node) const {
+    return new DemoOptKernel(node);
+}
+
+RetCode DemoEngine::LoadConstants(const ConstantVisitor& visitor, map<edgeid_t, RuntimeConstantInfo>* eid2info) {
+    return utils::LoadConstants(visitor, &device_, eid2info);
+}
+#endif
+
 }}} // namespace ppl::nn::demo

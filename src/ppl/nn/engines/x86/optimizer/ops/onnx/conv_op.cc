@@ -18,7 +18,7 @@
 #include "ppl/nn/engines/x86/optimizer/ops/onnx/conv_op.h"
 #include "ppl/nn/engines/x86/kernels/onnx/conv2d_dynamic_kernel.h"
 #include "ppl/nn/engines/x86/kernels/onnx/conv2d_kernel.h"
-#include "ppl/nn/oputils/onnx/reshape_convolution.h"
+#include "ppl/nn/oputils/onnx/reshape_conv.h"
 #include "ppl/nn/common/logger.h"
 
 #include "ppl/kernel/x86/common/threading_tools.h"
@@ -48,7 +48,7 @@ RetCode ConvOp::Init(const OptKernelOptions& options) {
     }
 
     infer_dims_func_ = [this](InputOutputInfo* info) -> RetCode {
-        return oputils::ReshapeConvolution(info, param_.get());
+        return oputils::ReshapeConv(info, param_.get());
     };
 
     infer_type_func_ = GenericInferType;
@@ -81,12 +81,10 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
     const ir::Shape& weight_shape = graph_data->shapes.find(node->GetInput(1))->second;
     const int64_t kernel_dims = weight_shape.dims.size() - 2;
 
-    param_->bias_term = (node->GetInputCount() == 3) ? 1 : 0;
-    param_->num_output = weight_shape.dims[0];
-    param_->channels = weight_shape.dims[1] * param_->group;
+    bias_term_ = (node->GetInputCount() == 3) ? 1 : 0;
 
     // Check Param
-    const ppl::nn::common::ConvolutionParam& conv_param = *param_.get();
+    const ppl::nn::common::ConvParam& conv_param = *param_;
     for (int64_t i = 0; i < kernel_dims; ++i) {
         if (conv_param.pads[i] != conv_param.pads[i + kernel_dims]) {
             return ppl::common::RC_UNSUPPORTED;
@@ -101,6 +99,9 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
             return ppl::common::RC_OUT_OF_MEMORY;
         }
 
+        const int32_t num_output = weight_shape.dims[0];
+        const int32_t channels = weight_shape.dims[1] * param_->group;
+
         ppl::kernel::x86::conv2d_fp32_param& conv2d_param = conv2d_param_->param;
         conv2d_param.kernel_h = conv_param.kernel_shape[0];
         conv2d_param.kernel_w = conv_param.kernel_shape[1];
@@ -111,8 +112,8 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
         conv2d_param.dilation_h = conv_param.dilations[0];
         conv2d_param.dilation_w = conv_param.dilations[1];
         conv2d_param.group = conv_param.group;
-        conv2d_param.num_output = conv_param.num_output;
-        conv2d_param.channels = conv_param.channels;
+        conv2d_param.num_output = num_output;
+        conv2d_param.channels = channels;
         conv2d_param.fuse_flag = 0;
 
         conv2d_param_->algo_info = ppl::kernel::x86::conv2d_algo_selector::select_algo(
@@ -135,6 +136,7 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
                     const int64_t dst_w = Y->GetShape()->GetDim(3);
                     const int64_t batch = X->GetShape()->GetDim(0);
                     const int64_t num_tiles = batch * ((dst_h + 3) / 4) * ((dst_w + 3) / 4);
+                    const bool align_tiles = (dst_h % 4 == 0) && (dst_w % 4) == 0;
 
                     const int64_t num_threads = ppl::kernel::x86::get_omp_max_threads();
                     if (num_threads > 4) { // Maybe memory bound. Just maybe.
@@ -147,8 +149,7 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
                             return true;
                         }
                     }
-
-                    return num_tiles < 12;
+                    return num_tiles < (align_tiles ? 10 : 12);
                 };
                 conv2d_param_->algo_info.algo_type = ppl::kernel::x86::conv2d_fp32_algo::WINOGRAD_B4F3;
             }
@@ -193,7 +194,7 @@ RetCode ConvOp::OmitConstantsData(std::map<edgeid_t, int64_t> *constants_data_re
         if (it != constants_data_refcount->end()) {
             it->second--;
         }
-        if (param_->bias_term) {
+        if (bias_term_) {
             auto bias_id = GetNode()->GetInput(2);
             it = constants_data_refcount->find(bias_id);
             if (it != constants_data_refcount->end()) {

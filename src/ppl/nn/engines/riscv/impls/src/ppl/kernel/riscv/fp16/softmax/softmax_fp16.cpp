@@ -41,11 +41,11 @@ ppl::common::RetCode softmax_ndarray_fp16(
 
     for (int64_t i = 0; i < outer_dim; i++) {
         const __fp16* src_ = src + i * inner_dim;
-        __fp16* dst_ = dst + i * inner_dim;
+        __fp16* dst_       = dst + i * inner_dim;
         // find max
         float16xm1_t vfmax = vfmvvf_float16xm1(-__FLT_MAX__, vl);
-        __fp16 fmax = (__fp16)(-__FLT_MAX__);
-        int64_t j = 0;
+        __fp16 fmax        = (__fp16)(-__FLT_MAX__);
+        int64_t j          = 0;
         for (; j + 8 < inner_dim; j += 8) {
             vfmax = vfmaxvv_float16xm1(vfmax, vlev_float16xm1(src_ + j, vl), vl);
         }
@@ -57,24 +57,15 @@ ppl::common::RetCode softmax_ndarray_fp16(
         for (int64_t k = 0; k < 8; k++) {
             fmax = std::max(fmax, max_data[k]);
         }
-        vfmax = vfmvvf_float16xm1(fmax, vl);
-        // src - max
-        for (j = 0; j + 8 < inner_dim; j += 8) {
-            const __fp16* src_p = src_ + j;
-            __fp16* dst_p = dst_ + j;
-            vsev_float16xm1(dst_p, vfsubvv_float16xm1(vlev_float16xm1(src_p, vl), vfmax, vl), vl);
-        }
-        for (; j < inner_dim; j++) {
-            dst_[j] = src_[j] - fmax;
-        }
-        // Σ(exp(src - max))
+        // Σ(exp(src - max)) -- precision-tuning
         float sum = 0.0f;
         for (j = 0; j < inner_dim; j++) {
-            sum += exp((float)dst_[j]);
+            sum += exp((float)src_[j] - fmax);
         }
+        float recp_sum = (double)1.0 / sum;
         // final result
         for (j = 0; j < inner_dim; j++) {
-            dst_[j] = (__fp16)(exp((float)dst_[j]) * (1.0f / sum));
+            dst_[j] = (__fp16)(exp((float)src_[j] - fmax) * recp_sum);
         }
     }
     return ppl::common::RC_SUCCESS;

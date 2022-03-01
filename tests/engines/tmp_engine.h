@@ -49,6 +49,20 @@ public:
         }
         return ppl::common::RC_SUCCESS;
     }
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode LoadConstants(const ConstantVisitor&, std::map<edgeid_t, RuntimeConstantInfo>*) override {
+        return ppl::common::RC_SUCCESS;
+    }
+    OptKernel* CreateOptKernel(const ir::Node* node) const override {
+        return new TmpOptKernelOne(node);
+    }
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 
 private:
     utils::GenericCpuDevice device_;
@@ -80,6 +94,20 @@ public:
         }
         return ppl::common::RC_SUCCESS;
     }
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode LoadConstants(const ConstantVisitor&, std::map<edgeid_t, RuntimeConstantInfo>*) override {
+        return ppl::common::RC_SUCCESS;
+    }
+    OptKernel* CreateOptKernel(const ir::Node* node) const override {
+        return new TmpOptKernelOne(node);
+    }
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 
 private:
     utils::GenericCpuDevice device_;
@@ -110,6 +138,20 @@ public:
         }
         return ppl::common::RC_SUCCESS;
     }
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode LoadConstants(const ConstantVisitor&, std::map<edgeid_t, RuntimeConstantInfo>*) override {
+        return ppl::common::RC_SUCCESS;
+    }
+    OptKernel* CreateOptKernel(const ir::Node* node) const override {
+        return new TmpOptKernelTwo(node);
+    }
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 
 private:
     utils::GenericCpuDevice device_;
@@ -140,6 +182,21 @@ public:
         }
         return ppl::common::RC_SUCCESS;
     }
+
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode LoadConstants(const ConstantVisitor&, std::map<edgeid_t, RuntimeConstantInfo>*) override {
+        return ppl::common::RC_SUCCESS;
+    }
+    OptKernel* CreateOptKernel(const ir::Node* node) const override {
+        return new TmpOptKernelTwo(node);
+    }
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 
 private:
     utils::GenericCpuDevice device_;

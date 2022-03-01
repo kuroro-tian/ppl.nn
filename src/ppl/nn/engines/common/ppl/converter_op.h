@@ -26,9 +26,17 @@ namespace ppl { namespace nn { namespace common {
 class ConverterOp final : public OptKernel {
 public:
     ConverterOp(const ir::Node* node) : OptKernel(node) {}
-    KernelImpl* CreateKernelImpl() const {
+    KernelImpl* CreateKernelImpl() const override {
         return new ConverterKernel(GetNode());
     }
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 };
 
 }}} // namespace ppl::nn::common

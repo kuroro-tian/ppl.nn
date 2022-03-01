@@ -19,7 +19,6 @@
 #include <map>
 
 #include "ppl/nn/optimizers/fuse_parallel_node_optimizer.h"
-#include "ppl/nn/models/onnx/param_parser_manager.h"
 #include "ppl/nn/params/param_utils_manager.h"
 #include "ppl/nn/common/logger.h"
 using namespace std;
@@ -103,8 +102,6 @@ static inline bool NodeTypeMatched(const SkippedNodeType& t1, const ir::Node::Ty
 // fuse parallel nodes which have same inputs & same params
 ppl::common::RetCode FuseParallelNodeOptimizer::Optimize(ir::Graph* graph) const {
     static const std::vector<SkippedNodeType> skipped_node_types{
-        {"", "Conv"}, // cannot compare param correctly
-        {"", "Reshape"}, // cannot compare param correctly
         {"", "If"}, // has subgraph
         {"", "Loop"} // has subgraph
     };

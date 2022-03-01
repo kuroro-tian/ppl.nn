@@ -21,7 +21,7 @@
 
 #include "ppl/nn/engines/arm/kernels/onnx/conv2d_kernel.h"
 #include "ppl/nn/engines/arm/utils/data_trans.h"
-#include "ppl/nn/oputils/onnx/reshape_convolution.h"
+#include "ppl/nn/oputils/onnx/reshape_conv.h"
 #include "ppl/nn/common/logger.h"
 
 using namespace std;
@@ -51,7 +51,7 @@ RetCode ConvOp::Init(const OptKernelOptions& options) {
     }
 
     infer_dims_func_ = [this](InputOutputInfo* info) -> RetCode {
-        return oputils::ReshapeConvolution(info, param_.get());
+        return oputils::ReshapeConv(info, param_.get());
     };
 
     infer_type_func_ = GenericInferType;
@@ -87,12 +87,8 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
     const ir::Shape& weight_shape = graph_data->shapes.find(node->GetInput(1))->second;
     const int64_t kernel_dims = weight_shape.dims.size() - 2;
 
-    param_->bias_term = (node->GetInputCount() == 3) ? 1 : 0;
-    param_->num_output = weight_shape.dims[0];
-    param_->channels = weight_shape.dims[1] * param_->group;
-
     // Check Param
-    const ppl::nn::common::ConvolutionParam& conv_param = *param_.get();
+    const ppl::nn::common::ConvParam& conv_param = *param_;
     for (int64_t i = 0; i < kernel_dims; ++i) {
         if (conv_param.pads[i] != conv_param.pads[i + kernel_dims]) {
             return ppl::common::RC_UNSUPPORTED;
@@ -107,6 +103,9 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
             return ppl::common::RC_OUT_OF_MEMORY;
         }
 
+        const int32_t num_output = weight_shape.dims[0];
+        const int32_t channels = weight_shape.dims[1] * param_->group;
+
         ppl::kernel::arm_server::neon::conv2d_param& conv2d_kernel_param = conv2d_param_->param;
         conv2d_kernel_param.kernel_h = conv_param.kernel_shape[0];
         conv2d_kernel_param.kernel_w = conv_param.kernel_shape[1];
@@ -117,8 +116,8 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
         conv2d_kernel_param.dilation_h = conv_param.dilations[0];
         conv2d_kernel_param.dilation_w = conv_param.dilations[1];
         conv2d_kernel_param.group = conv_param.group;
-        conv2d_kernel_param.num_output = conv_param.num_output;
-        conv2d_kernel_param.channels = conv_param.channels;
+        conv2d_kernel_param.num_output = num_output;
+        conv2d_kernel_param.channels = channels;
         conv2d_kernel_param.fuse_flag = 0;
 
         conv2d_param_->mgr = ppl::kernel::arm_server::neon::conv2d_algo_selector::fast_gen_algo(
@@ -136,7 +135,7 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
             return ppl::common::RC_UNSUPPORTED;
         }
 #ifdef PPLNN_ENABLE_KERNEL_PROFILING
-        LOG(INFO) << "Op " << node->GetName() << " selected conv algorithm: " 
+        LOG(INFO) << "Op " << node->GetName() << " selected conv algorithm: "
             << ppl::kernel::arm_server::neon::get_conv_algo_str(selected_algo.algo_type);
 #endif
 
@@ -145,14 +144,14 @@ ppl::common::RetCode ConvOp::SelectAlgorithm(const InputOutputInfo& info, const 
         if (selected_algo.data_type == ppl::common::DATATYPE_FLOAT32) {
             if (bias_data != nullptr) {
                 normal_cvt_weights_ret = conv2d_param_->mgr->gen_cvt_weights(weight_data, bias_data);
-                
+
                 if (conv2d_param_->fallback_mgr) {
                     fallback_cvt_weights_ret = conv2d_param_->fallback_mgr->gen_cvt_weights(weight_data, bias_data);
                 }
             } else {
                 std::vector<float> zero_bias(conv2d_kernel_param.num_output, 0.0f);
                 normal_cvt_weights_ret = conv2d_param_->mgr->gen_cvt_weights(weight_data, zero_bias.data());
-                
+
                 if (conv2d_param_->fallback_mgr) {
                     fallback_cvt_weights_ret = conv2d_param_->fallback_mgr->gen_cvt_weights(weight_data, zero_bias.data());
                 }

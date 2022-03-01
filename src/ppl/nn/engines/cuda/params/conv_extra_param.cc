@@ -59,8 +59,10 @@ int GetRelueType(const std::string& name) {
 #define Align(x, y) ( ((x)+(y)-1) / (y) * (y) )
 
 RetCode ConvertToForwardConvParam(const TensorShape& shape_in0, const TensorShape& shape_in1,
-                                  const TensorShape& shape_out, ConvolutionParam normal_param,
+                                  const TensorShape& shape_out, const CudaConvParam& cuda_param,
                                   conv_param_t& conv_param) {
+    const ConvParam& normal_param = cuda_param.param;
+
     conv_param.in_height = shape_in0.GetDim(2);
     conv_param.in_width = shape_in0.GetDim(3);
     conv_param.in_num = shape_in0.GetDim(0);
@@ -86,7 +88,7 @@ RetCode ConvertToForwardConvParam(const TensorShape& shape_in0, const TensorShap
     conv_param.pad_width = normal_param.pads[1];
     conv_param.hole_height = normal_param.dilations[0];
     conv_param.hole_width = normal_param.dilations[1];
-    conv_param.has_bias = normal_param.bias_term;
+    conv_param.has_bias = cuda_param.bias_term;
     return RC_SUCCESS;
 }
 #undef GetPadSize
@@ -112,16 +114,16 @@ RetCode ConvertToLeakyrelu(uint32_t fuse_index, InputOutputInfo* info, CudaDevic
                            fuse_param_t& fuse_param) {
     if (fuse_index == 0) {
         fuse_param.has_prelu = 1;
-        fuse_param.leaky = ((LeakyReLUParam*)fuse_info.fuse_attrs[fuse_index])->alpha;
+        fuse_param.leaky = ((LeakyReluParam*)fuse_info.fuse_attrs[fuse_index])->alpha;
     } else {
         fuse_param.has_elt_prelu = 1;
-        fuse_param.elt_leaky = ((LeakyReLUParam*)fuse_info.fuse_attrs[fuse_index])->alpha;
+        fuse_param.elt_leaky = ((LeakyReluParam*)fuse_info.fuse_attrs[fuse_index])->alpha;
     }
 
     return RC_SUCCESS;
 }
 
-RetCode ConvertToForwardFuseParam(InputOutputInfo* info, CudaDevice* device, ConvFusionInfo fuse_info,
+RetCode ConvertToForwardFuseParam(InputOutputInfo* info, CudaDevice* device, const ConvFusionInfo& fuse_info,
                                   fuse_param_t& fuse_param) {
     const std::set<std::string> relu_set{"Relu", "Clip", "PRelu", "LeakyRelu", "Sigmoid"};
     int fuse_index = 0;

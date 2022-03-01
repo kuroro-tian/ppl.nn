@@ -22,10 +22,11 @@
 #include "ppl/nn/models/onnx/parsers/onnx/parse_argmax_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_batchnormalization_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_cast_param.h"
+#include "ppl/nn/models/onnx/parsers/onnx/parse_clip_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_concat_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_constant_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_constant_of_shape_param.h"
-#include "ppl/nn/models/onnx/parsers/onnx/parse_convolution_param.h"
+#include "ppl/nn/models/onnx/parsers/onnx/parse_conv_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_convtranspose_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_cumsum_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_depth_to_space_param.h"
@@ -36,6 +37,8 @@
 #include "ppl/nn/models/onnx/parsers/onnx/parse_if_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_leaky_relu_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_loop_param.h"
+#include "ppl/nn/models/onnx/parsers/onnx/parse_lrn_param.h"
+#include "ppl/nn/models/onnx/parsers/onnx/parse_lstm_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_maxunpool_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_non_max_suppression_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_pad_param.h"
@@ -51,8 +54,6 @@
 #include "ppl/nn/models/onnx/parsers/onnx/parse_topk_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_transpose_param.h"
 #include "ppl/nn/models/onnx/parsers/onnx/parse_unsqueeze_param.h"
-#include "ppl/nn/models/onnx/parsers/onnx/parse_lrn_param.h"
-#include "ppl/nn/models/onnx/parsers/onnx/parse_lstm_param.h"
 
 #include "ppl/nn/models/onnx/parsers/mmcv/parse_mmcv_gridsample_param.h"
 #include "ppl/nn/models/onnx/parsers/mmcv/parse_mmcv_modulated_deform_conv2d_param.h"
@@ -138,12 +139,13 @@ ParamParserManager::ParamParserManager() {
     // C
     PPL_REGISTER_OP_WITH_PARAM("", "Cast", 9, 12, ppl::nn::common::CastParam, ParseCastParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Ceil", 6, 12);
+    PPL_REGISTER_OP_WITH_PARAM("", "Clip", 6, 10, ppl::nn::common::ClipParam, ParseClipParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Clip", 11, 11);
     PPL_REGISTER_OP_WITH_PARAM("", "Concat", 11, 12, ppl::nn::common::ConcatParam, ParseConcatParam);
     PPL_REGISTER_OP_WITH_PARAM("", "Constant", 9, 16, ppl::nn::common::ConstantParam, ParseConstantParam);
     PPL_REGISTER_OP_WITH_PARAM("", "ConstantOfShape", 9, 16, ppl::nn::common::ConstantOfShapeParam,
                                ParseConstantOfShapeParam);
-    PPL_REGISTER_OP_WITH_PARAM("", "Conv", 1, 16, ppl::nn::common::ConvolutionParam, ParseConvolutionParam);
+    PPL_REGISTER_OP_WITH_PARAM("", "Conv", 1, 16, ppl::nn::common::ConvParam, ParseConvParam);
     PPL_REGISTER_OP_WITH_PARAM("", "ConvTranspose", 11, 16, ppl::nn::common::ConvTransposeParam,
                                ParseConvTransposeParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Cos", 1, 16);
@@ -161,8 +163,8 @@ ParamParserManager::ParamParserManager() {
     PPL_REGISTER_OP_WITH_PARAM("", "Flatten", 11, 12, ppl::nn::common::FlattenParam, ParseFlattenParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Floor", 6, 12);
     // G
-    PPL_REGISTER_OP_WITH_PARAM("", "Gather", 11, 12, ppl::nn::common::GatherParam, ParseGatherParam);
-    PPL_REGISTER_OP_WITH_PARAM("", "GatherND", 11, 11, ppl::nn::common::GatherNDParam, ParseGatherNDParam);
+    PPL_REGISTER_OP_WITH_PARAM("", "Gather", 1, 16, ppl::nn::common::GatherParam, ParseGatherParam);
+    PPL_REGISTER_OP_WITH_PARAM("", "GatherND", 11, 16, ppl::nn::common::GatherNDParam, ParseGatherNDParam);
     PPL_REGISTER_OP_WITH_PARAM("", "Gemm", 11, 12, ppl::nn::common::GemmParam, ParseGemmParam);
     PPL_REGISTER_OP_WITH_PARAM("", "GlobalAveragePool", 1, 16, ppl::nn::common::PoolingParam, ParsePoolingParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Greater", 9, 12);
@@ -170,7 +172,7 @@ ParamParserManager::ParamParserManager() {
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Identity", 1, 12);
     PPL_REGISTER_OP_WITH_PARAM("", "If", 11, 12, ppl::nn::common::IfParam, ParseIfParam);
     // L
-    PPL_REGISTER_OP_WITH_PARAM("", "LeakyRelu", 6, 16, ppl::nn::common::LeakyReLUParam, ParseLeakyReLUParam);
+    PPL_REGISTER_OP_WITH_PARAM("", "LeakyRelu", 6, 16, ppl::nn::common::LeakyReluParam, ParseLeakyReluParam);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Less", 9, 12);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Log", 6, 12);
     PPL_REGISTER_OP_WITH_PARAM("", "Loop", 11, 12, ppl::nn::common::LoopParam, ParseLoopParam);
@@ -202,7 +204,7 @@ ParamParserManager::ParamParserManager() {
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Relu", 6, 12);
     PPL_REGISTER_OP_WITHOUT_PARAM("", "Reshape", 5, 12);
     PPL_REGISTER_OP_WITH_PARAM("", "Resize", 11, 12, ppl::nn::common::ResizeParam, ParseResizeParam);
-    PPL_REGISTER_OP_WITH_PARAM("", "RoiAlign", 10, 15, ppl::nn::common::ROIAlignParam, ParseROIAlignParam);
+    PPL_REGISTER_OP_WITH_PARAM("", "RoiAlign", 10, 15, ppl::nn::common::RoiAlignParam, ParseRoiAlignParam);
     // S
     PPL_REGISTER_OP_WITH_PARAM("", "ScatterElements", 11, 12, ppl::nn::common::ScatterElementsParam,
                                ParseScatterElementsParam);
@@ -233,8 +235,8 @@ ParamParserManager::ParamParserManager() {
     // mmcv op param parser
     PPL_REGISTER_OP_WITH_PARAM("mmcv", "grid_sampler", 1, 1, ppl::nn::common::MMCVGridSampleParam,
                                ParseMMCVGridSampleParam);
-    PPL_REGISTER_OP_WITH_PARAM("mmcv", "MMCVRoiAlign", 1, 1, ppl::nn::common::MMCVROIAlignParam,
-                               ParseMMCVROIAlignParam);
+    PPL_REGISTER_OP_WITH_PARAM("mmcv", "MMCVRoiAlign", 1, 1, ppl::nn::common::MMCVRoiAlignParam,
+                               ParseMMCVRoiAlignParam);
     PPL_REGISTER_OP_WITH_PARAM("mmcv", "MMCVModulatedDeformConv2d", 1, 1,
                                ppl::nn::common::MMCVModulatedDeformConv2dParam, ParseMMCVModulatedDeformConv2dParam);
     PPL_REGISTER_OP_WITH_PARAM("mmcv", "NonMaxSuppression", 1, 1, ppl::nn::common::MMCVNMSParam, ParseMMCVNMSParam);

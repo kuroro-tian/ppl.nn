@@ -22,6 +22,7 @@
 #include <chrono>
 
 #include "ppl/nn/engines/riscv/riscv_common_param.h"
+#include "ppl/nn/engines/riscv/utils/macros.h"
 #include "ppl/nn/runtime/opt_kernel.h"
 #include "ppl/nn/runtime/kernel_impl.h"
 #include "ppl/nn/engines/riscv/riscv_device.h"
@@ -31,9 +32,7 @@ namespace ppl { namespace nn { namespace riscv {
 
 class RiscvKernel : public KernelImpl {
 public:
-    RiscvKernel(const ir::Node* node) : KernelImpl(node) {
-        LOG(DEBUG) << node->GetType().name << " " << GetName();
-    }
+    RiscvKernel(const ir::Node* node) : KernelImpl(node) {}
     RiscvKernel(RiscvKernel&&) = default;
     ppl::common::RetCode Execute(KernelExecContext* ctx) override;
 

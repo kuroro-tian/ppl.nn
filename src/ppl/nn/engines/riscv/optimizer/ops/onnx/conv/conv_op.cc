@@ -18,7 +18,7 @@
 #include "ppl/nn/engines/riscv/optimizer/ops/onnx/conv/conv_op.h"
 #include "ppl/nn/engines/riscv/impls/include/ppl/kernel/riscv/fp16/conv2d.h"
 #include "ppl/nn/engines/riscv/kernels/onnx/conv/conv2d_kernel.h"
-#include "ppl/nn/oputils/onnx/reshape_convolution.h"
+#include "ppl/nn/oputils/onnx/reshape_conv.h"
 #include "ppl/nn/engines/riscv/riscv_engine_options.h"
 #include "ppl/nn/common/logger.h"
 #include <cstring>
@@ -46,7 +46,7 @@ RetCode ConvOp::Init(const OptKernelOptions& options) {
     }
 
     infer_dims_func_ = [this](InputOutputInfo* info) -> RetCode {
-        return oputils::ReshapeConvolution(info, param_.get());
+        return oputils::ReshapeConv(info, param_.get());
     };
 
     infer_type_func_ = GenericInferType;
@@ -75,7 +75,7 @@ RetCode ConvOp::SelectFormat(const InputOutputInfo& info, vector<dataformat_t>* 
     return RC_INVALID_VALUE;
 }
 
-ppl::common::RetCode ConvOp::SelectDataType(const InputOutputInfo& info,
+ppl::common::RetCode ConvOp::SelectDataType(const InputOutputInfo& info, ppl::common::datatype_t forward_precision,
                                             std::vector<ppl::common::datatype_t>* selected_input_data_types,
                                             std::vector<ppl::common::datatype_t>* selected_output_data_types) {
     if (conv2d_param_ && conv2d_param_->mgr &&

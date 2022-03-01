@@ -16,6 +16,7 @@
 // under the License.
 
 #include "ppl/nn/engines/cuda/kernels/onnx/conv_imma_kernel.h"
+#include "ppl/common/cuda/cuda_types.h"
 
 #include <cuda_fp16.h>
 
@@ -37,7 +38,10 @@ ppl::common::RetCode ConvImmaKernel::BeforeExecute(KernelExecContext* ctx) {
             if (ptr == edge2buffer->end()) {
                 BufferDesc buffer;
                 auto concat_shape = *tensor->GetShape();
-                concat_shape.SetDim(1, param_->extra_param.fuse_info.channel_size);
+                auto align_size = ppl::common::cuda::GetDataFormatChannelAlignment(concat_shape.GetDataFormat());
+                auto channel_size = param_->extra_param.fuse_info.channel_size;
+                auto channel_size_pad = (channel_size + align_size - 1) / align_size * align_size;
+                concat_shape.SetDim(1, channel_size_pad);
                 status = device->Realloc(concat_shape, &buffer);
                 if (status != RC_SUCCESS) {
                     LOG(ERROR) << "alloc buffer for constant failed: " << GetRetCodeStr(status);
@@ -80,7 +84,7 @@ ppl::common::RetCode ConvImmaKernel::DoExecute(KernelExecContext* ctx) {
     auto output_scale = output_quant.scale[0];
     auto d_weight_scale = ctx->GetInput<TensorImpl>(ctx->GetInputCount() - 1)->GetBufferPtr();
 
-    ConvertToForwardConvParam(shape_in0, shape_in1, shape_out, param_->param, temp_conv_param);
+    ConvertToForwardConvParam(shape_in0, shape_in1, shape_out, *param_, temp_conv_param);
     ConvertToForwardFuseParam(ctx, GetCudaDevice(), param_->extra_param.fuse_info, temp_fuse_param);
 
     temp_quant_param.in_scale    = input_scale;
@@ -126,7 +130,7 @@ ppl::common::RetCode ConvImmaKernel::DoExecute(KernelExecContext* ctx) {
     PPLCUDAConvolutionForwardJitImpInt8(
         stream, module->GetKernelFunc(), shape_in0.GetDataType(), (int4*)input->GetBufferPtr(),
         (int4*)weight->GetBufferPtr(), (int4*)output->GetBufferPtr(),
-        param_->param.bias_term ? (int4*)ctx->GetInput<TensorImpl>(2)->GetBufferPtr() : nullptr, (int4*)tmp_buffer,
+        param_->bias_term ? (int4*)ctx->GetInput<TensorImpl>(2)->GetBufferPtr() : nullptr, (int4*)tmp_buffer,
         algo_param, temp_conv_param, temp_quant_param, temp_fuse_param);
 #else
     PPLCUDAConvolutionForwardImpInt8(

@@ -39,13 +39,16 @@ RetCode ClipOp::SelectFormat(const InputOutputInfo& info, vector<dataformat_t>* 
     return RC_SUCCESS;
 }
 
-RetCode ClipOp::SelectDataType(const InputOutputInfo& info, std::vector<datatype_t>* selected_input_data_types,
+RetCode ClipOp::SelectDataType(const InputOutputInfo& info, ppl::common::datatype_t forward_precision,
+                               std::vector<datatype_t>* selected_input_data_types,
                                std::vector<datatype_t>* selected_output_data_types) {
-    if (DATATYPE_FLOAT16 == selected_input_data_types->at(0)) {
-        selected_output_data_types->at(0) = DATATYPE_FLOAT16;
-    } else if (DATATYPE_FLOAT32 == selected_input_data_types->at(0)) {
-        selected_output_data_types->at(0) = DATATYPE_FLOAT32;
+    if (DATATYPE_INT64 == selected_input_data_types->at(0)) {
+        selected_output_data_types->at(0) = DATATYPE_INT64;
+    } else {
+        selected_input_data_types->at(0) = forward_precision;
+        selected_output_data_types->at(0) = forward_precision;
     }
+
     return RC_SUCCESS;
 }
 

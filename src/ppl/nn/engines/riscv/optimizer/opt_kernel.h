@@ -72,7 +72,7 @@ public:
         return ppl::common::RC_SUCCESS;
     }
 
-    virtual ppl::common::RetCode SelectDataType(const InputOutputInfo& info,
+    virtual ppl::common::RetCode SelectDataType(const InputOutputInfo& info, ppl::common::datatype_t forward_precision,
                                                 std::vector<ppl::common::datatype_t>* selected_input_data_types,
                                                 std::vector<ppl::common::datatype_t>* selected_output_data_types) {
         auto input_type = selected_input_data_types->at(0);
@@ -164,6 +164,15 @@ protected:
             out_shape->SetDataType(in_shape0.GetDataType());
         }
     }
+
+#ifdef PPLNN_ENABLE_PMX_MODEL
+    ppl::common::RetCode SerializeData(utils::DataStream*) const override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+    ppl::common::RetCode DeserializeData(const void*, uint64_t) override {
+        return ppl::common::RC_UNSUPPORTED;
+    }
+#endif
 
 protected:
     std::function<void(InputOutputInfo*)> infer_type_func_;

@@ -48,12 +48,12 @@ ppl::common::RetCode ReduceMaxKernel::DoExecute(KernelExecContext* ctx) {
     PPLNN_RISCV_DEBUG_TRACE("Op: %s\n", GetName().c_str());
     PPLNN_RISCV_DEBUG_TRACE("Input [data]:\n");
     PPL_RISCV_TENSOR_PRINT_DEBUG_MSG(data);
-    PPLNN_RISCV_DEBUG_TRACE("Input [reduced]:\n");
+    PPLNN_RISCV_DEBUG_TRACE("Output [reduced]:\n");
     PPL_RISCV_TENSOR_PRINT_DEBUG_MSG(reduced);
     for (uint32_t i = 0; i < fixed_axes.size(); ++i) {
         PPLNN_RISCV_DEBUG_TRACE("axes[%d]: %d\n", i, fixed_axes[i]);
     }
-    PPLNN_RISCV_DEBUG_TRACE("keepdims: %d\n", param_->keep_dims);
+    PPLNN_RISCV_DEBUG_TRACE("keepdims: %d\n", param_->keepdims);
 
     auto data_type = data->GetShape()->GetDataType();
     if (data_type == ppl::common::DATATYPE_FLOAT16) {
