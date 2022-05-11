@@ -58,7 +58,7 @@ ppl::common::RetCode PPLCUDAConvTransposeForward(
     void* output,
     const ppl::nn::onnx::ConvTransposeParam* param,
     algo_param_t algo_param,
-    const fuse_param_t &fuse_param,
+    fuse_param_t &fuse_param,
     void* temp_buffer);
 
 double PPLCUDAConvTransposeSelectKernel(

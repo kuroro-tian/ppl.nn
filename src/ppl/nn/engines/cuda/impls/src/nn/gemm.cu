@@ -529,7 +529,6 @@ ppl::common::RetCode PPLCUDAGemmForwardImp(
     int tile_n_per_cta  = algo_param.tiles.n_cta;
     int tile_k_per_cta  = algo_param.tiles.k_cta;
     int cta_size_in_thd = algo_param.tiles.cta_size_in_thd;
-    printf("m=%d, n%d, k%d, cta size=%d\n", tile_m_per_cta, tile_n_per_cta, tile_k_per_cta, cta_size_in_thd);
 #else
     int kid             = algo_param.kid;
     int tile_m_per_cta  = g_kvec[kid].tile_m_per_cta;
@@ -548,7 +547,7 @@ ppl::common::RetCode PPLCUDAGemmForwardImp(
     int kLoopNum = DivUp(K_pad, tile_k_per_cta);
     lut_t in_lut, flt_lut;
 
-    bool has_bias    = param.bias_term; // beta != 0.f;
+    int has_bias    = param.bias_term; // beta != 0.f;
     int4 *input0_tmp = (int4 *)input;
     if (transA == 1) {
         dim3 grid(DivUp(K_pad, 32), DivUp(M, 32), 1);
@@ -561,9 +560,6 @@ ppl::common::RetCode PPLCUDAGemmForwardImp(
             return ppl::common::RC_UNSUPPORTED;
         }
         input0_tmp = (int4 *)temp_buffer;
-{cudaDeviceSynchronize();
-auto e = cudaGetLastError();
-printf("transa gemm: %d\n", e);}
     }
     FAKE_CONV_PARAM
 #ifdef PPLNN_ENABLE_CUDA_JIT
@@ -577,14 +573,7 @@ printf("transa gemm: %d\n", e);}
 
     void *args[]        = {&input0_tmp, &weight, &final_out, &kLoopNum, &in_lut, &in_lut_size, &flt_lut, &flt_lut_size, &in_hw, &out_hw, &flt_hw, &splitk, &in_height, &in_width, &batch, &num_grp, &num_chl_per_grp, &num_chl_per_grp_pad, &flt_height, &flt_width, &num_flt_per_grp, &num_flt_per_grp_pad, &out_height, &out_width, &stride_height, &stride_width, &pad_height, &pad_width, &hole_height, &hole_width, &has_bias, &bias, &fuse_param.has_activation, &clip_min, &fuse_param.has_clip, &clip_max, &fuse_param.has_prelu, &prelu, &fuse_param.has_elt, &(pre_data), &fuse_param.has_elt_activation, &elt_clip_min, &fuse_param.has_elt_clip, &elt_clip_max, &fuse_param.has_elt_prelu, &(elt_prelu), &leaky, &elt_leaky, &fuse_param.has_concat, &concat_offset_v8, &concat_stride_v8};
     CUfunction function = module->GetKernelFunc();
-{cudaDeviceSynchronize();
-auto e = cudaGetLastError();
-printf("pre launch gemm: %d,(%d,%d,%d), grid:(%d,%d,%d) %d, %s\n", e, M, N, K, grid_size.x, grid_size.y, grid_size.z, block_size.x, algo_param.algo_name.c_str());}
-    //CUDA_SAFE_CALL(cuLaunchKernel(function, grid_size.x, grid_size.y, grid_size.z, block_size.x, block_size.y, block_size.z, 0, stream, args, 0));
-    CUDA_SAFE_CALL(cuLaunchKernel(function, 1, 1, 1, block_size.x, block_size.y, block_size.z, 0, stream, args, 0));
-{cudaDeviceSynchronize();
-auto e = cudaGetLastError();
-printf("post launch gemm: %d\n", e);}
+    CUDA_SAFE_CALL(cuLaunchKernel(function, grid_size.x, grid_size.y, grid_size.z, block_size.x, block_size.y, block_size.z, 0, stream, args, 0));
 #else
         (g_kvec[kid].lut_kptr)<<<grid_size, block_size, 0, stream>>>(GEMM_FUNC_PARAM);
 #endif
